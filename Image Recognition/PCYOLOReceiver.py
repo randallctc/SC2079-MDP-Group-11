@@ -13,21 +13,21 @@ os.makedirs(SAVE_DIR, exist_ok=True)
 
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print("📡 Connecting to RPi...")
+    print("Connecting to RPi...")
     sock.connect((SERVER_HOST, SERVER_PORT))
-    print("✅ Connected to RPi.")
+    print("Connected to RPi.")
 
     try:
         while True:
             size_data = sock.recv(16)
             if not size_data:
-                print("⚠️ No size data. Stream ended.")
+                print("No size data. Stream ended.")
                 break
 
             try:
                 size = int(size_data.decode().strip())
             except ValueError:
-                print("⚠️ Invalid size header.")
+                print("Invalid size header.")
                 break
 
             payload_bytes = b""
@@ -38,7 +38,7 @@ def main():
                 payload_bytes += packet
 
             if len(payload_bytes) != size:
-                print("⚠️ Incomplete payload.")
+                print("Incomplete payload.")
                 break
 
             payload = json.loads(payload_bytes.decode("utf-8"))
@@ -55,21 +55,21 @@ def main():
             with open(json_path, "w") as f:
                 json.dump(metadata, f, indent=2)
 
-            print(f"💾 Saved {img_path} + {json_path}")
-            print("📊 Metadata:", metadata)
+            print(f"Saved {img_path} + {json_path}")
+            print("Metadata:", metadata)
 
             cv2.imshow("PC YOLO Stream", frame)
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
-                print("👋 User requested exit.")
+                print("User requested exit.")
                 break
 
     except KeyboardInterrupt:
-        print("🛑 Interrupted by user.")
+        print("Interrupted by user.")
     finally:
         sock.close()
         cv2.destroyAllWindows()
-        print("✅ PC client closed.")
+        print("PC client closed.")
 
 if __name__ == "__main__":
     main()
