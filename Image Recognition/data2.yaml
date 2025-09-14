@@ -1,0 +1,46 @@
+train: C:/Users/Randall Chiang/Documents/MDP Stuff/MDP Dataset Modern/train/images
+val: C:/Users/Randall Chiang/Documents/MDP Stuff/MDP Dataset Modern/valid/images
+test: C:/Users/Randall Chiang/Documents/MDP Stuff/MDP Dataset Modern/test/images
+
+nc: 31
+names:
+  [
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "marker",
+  ]
+
+roboflow:
+  workspace: mdp-ppng7
+  project: ananya-testing-8bxwn
+  version: 5
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/mdp-ppng7/ananya-testing-8bxwn/dataset/5
