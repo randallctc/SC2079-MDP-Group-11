@@ -1,6 +1,6 @@
 from ultralytics import YOLO
-model = YOLO(r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Image Recognition\runs.m\detect.m\train3\weights\best.pt")
-img_path = "C:/Users/Randall Chiang/Documents/MDP Stuff/MDP Dataset/test/images/20230829_172009_jpg.rf.51da078e724f666a1f224f1de8f52482.jpg"
+model = YOLO(r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Image Recognition\TrainedYOLOnModelColoured.pt")
+img_path = r"C:\Users\randa\OneDrive\Documents\MDP\test_images\20230825_123435_jpg.rf.a953bb526c340e5c7af9ff3676617988.jpg"
 results = model.predict(img_path, imgsz = 640)
 print(results)
 results[0].show()

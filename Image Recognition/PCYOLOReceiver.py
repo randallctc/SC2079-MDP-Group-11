@@ -6,9 +6,9 @@ import numpy as np
 import os
 from datetime import datetime
 
-SERVER_HOST = "192.168.10.127"  # RPi IP
+SERVER_HOST = "192.168.11.1"  # RPi IP
 SERVER_PORT = 5005
-SAVE_DIR = r"C:\Users\Randall Chiang\Documents\GitHub\SC2079-MDP-Group-11\Image Recognition\Receive Detected"
+SAVE_DIR = r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Detected"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 def main():
