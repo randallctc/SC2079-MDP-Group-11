@@ -87,7 +87,6 @@ def main():
                 max_idx = int(areas.argmax())
                 class_id = model.names[int(results.boxes.cls[max_idx].item())]
 
-
                 # Overlay bounding box and class ID on frame
                 x1, y1, x2, y2 = map(int, results.boxes.xyxy[max_idx])
                 label = f"Obstacle ID: {obstacle_id}, Class ID: {class_id}"
@@ -116,7 +115,6 @@ def main():
             # Send back to RPi
             sock.sendall(response_json)
 
-            # Optional: display detection
             annotated_frame = results.plot()
             cv2.imshow("PC YOLO Detection", annotated_frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
