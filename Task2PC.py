@@ -2,7 +2,6 @@ import socket
 import base64
 import cv2
 import numpy as np
-import struct
 import json
 import os
 from datetime import datetime
@@ -11,86 +10,100 @@ from ultralytics import YOLO
 HOST = "192.168.11.1"
 PORT = 5005
 
-model = YOLO(r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Image Recognition\TrainedYOLOnModelColoured.pt")
-SAVE_DIR = r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Detected_Task2"
+model = YOLO(r"C:\path\to\TrainedYOLOnModelColoured.pt")
+SAVE_DIR = r"C:\path\to\Detected"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((HOST, PORT))
-print("Connected to RPi server")
+def receive_full_message(sock):
+    length_bytes = sock.recv(16)
+    if not length_bytes:
+        return None
 
-def recv_exact(sock, length):
-    data = b''
-    while len(data) < length:
-        more = sock.recv(length - len(data))
-        if not more:
-            raise EOFError("Socket closed")
-        data += more
-    return data
+    length = int(length_bytes.decode("utf-8").strip())
+    data_bytes = b""
 
-try:
-    while True:
-        # Receive message length
-        raw_len = recv_exact(client_socket, 4)
-        msg_len = struct.unpack('!I', raw_len)[0]
+    while len(data_bytes) < length:
+        chunk = sock.recv(length - len(data_bytes))
+        if not chunk:
+            break
+        data_bytes += chunk
 
-        # Receive image data
-        frame_data = recv_exact(client_socket, msg_len)
-        frame_b64 = frame_data.decode('utf-8')
-        frame = base64.b64decode(frame_b64)
+    if len(data_bytes) != length:
+        print("Incomplete message received")
+        return None
 
-        # Convert to OpenCV image
-        np_arr = np.frombuffer(frame, np.uint8)
-        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-        img = cv2.flip(img, -1)
+    return json.loads(data_bytes.decode("utf-8"))
 
-        # Run YOLO detection
-        results = model(img, verbose=False)
 
-        # Check for right or left arrows
-        detected_class = None
+def send_json(sock, data):
+    msg = json.dumps(data).encode("utf-8")
+    header = f"{len(msg):<16}".encode("utf-8")
+    sock.sendall(header + msg)
 
-        # Loop over all detected boxes
-        for box in results[0].boxes:
-            cls_idx = int(box.cls[0])  # numeric class ID
-            print("Class ID:", cls_idx)
-            if cls_idx == 28:  # Right arrow
-                detected_class = "right_arrow"
-                """x1, y1, x2, y2 = map(int, box.xyxy[0])
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, "Right Arrow", (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)"""
 
-            elif cls_idx == 29:  # Left arrow
-                detected_class = "left_arrow"
-                """x1, y1, x2, y2 = map(int, box.xyxy[0])
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, "Left Arrow", (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)"""
+def handle_client(conn, addr):
+    print(f"Connected to RPi client: {addr}")
+    try:
+        while True:
+            message = receive_full_message(conn)
+            if not message:
+                break
 
-        # If no arrows were found, set detected_class to "None"
-        if detected_class is None:
+            # Decode base64 image
+            frame_b64 = message.get("image")
+            if not frame_b64:
+                continue
+            img_data = base64.b64decode(frame_b64)
+            np_arr = np.frombuffer(img_data, np.uint8)
+            img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            img = cv2.flip(img, -1)
+
+            # Run YOLO detection
+            results = model(img, verbose=False)
             detected_class = "None"
 
-        # Save annotated image
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        save_path = os.path.join(SAVE_DIR, f"detection_{detected_class}_{timestamp}.jpg")
-        cv2.imwrite(save_path, frame)
-        print(f"Saved detection image: {save_path}")
+            for box in results[0].boxes:
+                cls_idx = int(box.cls[0])
+                if cls_idx == 28:
+                    detected_class = "right_arrow"
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(img, "Right Arrow", (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                elif cls_idx == 29:
+                    detected_class = "left_arrow"
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(img, "Left Arrow", (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-        # If detected, send JSON message
-        if detected_class:
-            msg = json.dumps({"class_id": detected_class})
-            client_socket.sendall(msg.encode('utf-8'))
+            # Save image for inspection
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            save_path = os.path.join(SAVE_DIR, f"detection_{detected_class}_{timestamp}.jpg")
+            cv2.imwrite(save_path, img)
+            print(f"Saved detection image: {save_path}")
 
-        # Display received image
-        cv2.imshow("YOLO Detection", img)
-        if cv2.waitKey(1) == ord('q'):
-            break
+            # Send back class_id result
+            send_json(conn, {"class_id": detected_class})
+            print(f"Sent result: {detected_class}")
 
-except KeyboardInterrupt:
-    print("Exiting...")
-    
-finally:
-    client_socket.close()
-    cv2.destroyAllWindows()
+    except (ConnectionResetError, EOFError):
+        print("RPi disconnected.")
+    finally:
+        conn.close()
+        print("Connection closed.")
+
+def main():
+    print("Starting PC Server...")
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind((HOST, PORT))
+    server_socket.listen(1)
+    print(f"Listening on {HOST}:{PORT}")
+
+    while True:
+        conn, addr = server_socket.accept()
+        handle_client(conn, addr)
+
+
+if __name__ == "__main__":
+    main()
