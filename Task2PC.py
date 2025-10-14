@@ -12,7 +12,7 @@ HOST = "192.168.11.1"
 PORT = 5005
 
 model = YOLO(r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Image Recognition\TrainedYOLOnModelColoured.pt")
-SAVE_DIR = r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Detected"
+SAVE_DIR = r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Detected_Task2"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -54,20 +54,19 @@ try:
         for box in results[0].boxes:
             cls_idx = int(box.cls[0])  # numeric class ID
             print("Class ID:", cls_idx)
-
-            if cls_idx == 38:  # Right arrow
+            if cls_idx == 28:  # Right arrow
                 detected_class = "right_arrow"
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                """x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, "Right Arrow", (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)"""
 
-            elif cls_idx == 39:  # Left arrow
+            elif cls_idx == 29:  # Left arrow
                 detected_class = "left_arrow"
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                """x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, "Left Arrow", (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)"""
 
         # If no arrows were found, set detected_class to "None"
         if detected_class is None:
@@ -90,7 +89,8 @@ try:
             break
 
 except KeyboardInterrupt:
-    print("\ Exiting...")
+    print("Exiting...")
+    
 finally:
     client_socket.close()
     cv2.destroyAllWindows()

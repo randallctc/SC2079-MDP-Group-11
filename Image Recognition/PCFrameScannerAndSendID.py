@@ -19,7 +19,7 @@ MODEL_PATH = r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Imag
 CONF_THRESHOLD = 0.35
 
 # Directory to save detected frames
-SAVE_DIR = r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Detected"
+SAVE_DIR = r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Detected_2"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 def receive_full_message(sock):
