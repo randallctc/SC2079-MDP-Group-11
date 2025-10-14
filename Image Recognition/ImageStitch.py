@@ -1,44 +1,50 @@
-from ultralytics import YOLO
-import os
 import cv2
+import glob
 import numpy as np
-import math
+import os
 
-model = "Image Recognition\TrainedYOLOv8m.pt"
+def stitch_images_grid(image_folder, grid_cols=2, display_max_width=1200, display_max_height=800):
+    print("\nStarting simple image grid stitching...")
 
-def predict():
-    model.predict()
+    image_paths = sorted(glob.glob(f"{image_folder}/*.jpg"))  # or .png
+    images = [cv2.imread(img) for img in image_paths if cv2.imread(img) is not None]
 
-def stitchImages(imagePath="PiCam Images Path"):
-    images = []
+    if not images:
+        print("No valid images found.")
+        return
 
-    # Load images
-    for root, dirs, files in os.walk(imagePath):
-        for file in files:
-            img_path = os.path.join(root, file)
-            img = cv2.imread(img_path)
-            if img is not None:
-                images.append(img)
+    # Resize all images to the same size (based on first image)
+    h, w = images[0].shape[:2]
+    images = [cv2.resize(img, (w, h)) for img in images]
 
-    if len(images) == 0:
-        print("No images found in folder:", imagePath)
-        return None
-
-    # Grid size
+    # Compute grid size
     n = len(images)
-    cols = math.ceil(math.sqrt(n))
-    rows = math.ceil(n / cols)
+    grid_rows = int(np.ceil(n / grid_cols))
 
     # Pad with black images if needed
-    h, w, c = images[0].shape
-    while len(images) < rows * cols:
-        images.append(np.zeros((h, w, c), dtype=np.uint8))
+    while len(images) < grid_rows * grid_cols:
+        images.append(np.zeros_like(images[0]))
 
-    # Build the grid
-    grid_rows = []
-    for r in range(rows):
-        row = np.hstack(images[r*cols:(r+1)*cols])
-        grid_rows.append(row)
+    # Combine into grid
+    rows = []
+    for i in range(0, len(images), grid_cols):
+        row = np.hstack(images[i:i + grid_cols])
+        rows.append(row)
 
-    canvas = np.vstack(grid_rows)
-    return canvas
+    stitched = np.vstack(rows)
+
+    # Save full-resolution version
+    stitched_path = os.path.join(image_folder, "stitched_grid.jpg")
+    cv2.imwrite(stitched_path, stitched)
+    print(f"Grid stitching complete. Saved as {stitched_path}")
+
+    # Auto-resize for display only
+    display = stitched.copy()
+    h, w = display.shape[:2]
+    scale = min(display_max_width / w, display_max_height / h, 1.0)
+    if scale < 1.0:
+        display = cv2.resize(display, (int(w * scale), int(h * scale)))
+
+    cv2.imshow("Stitched Grid (Resized View)", display)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()

@@ -6,6 +6,7 @@ import cv2
 from ultralytics import YOLO
 from datetime import datetime
 import os
+from ImageStitch import stitch_images_grid
 
 # RPi server IP and port
 RPi_HOST = "192.168.11.1"
@@ -72,8 +73,9 @@ def main():
             img_array = np.frombuffer(img_bytes, dtype=np.uint8)
             frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
-            # Fix inverted image (flip vertically)
+            # Fix inverted image
             frame = cv2.flip(frame, 0)
+            frame = cv2.flip(frame, 1)
 
             # Run YOLO detection
             results = model(frame, conf=CONF_THRESHOLD, verbose=False)[0]
@@ -83,7 +85,8 @@ def main():
                 areas = (results.boxes.xyxy[:, 2] - results.boxes.xyxy[:, 0]) * \
                         (results.boxes.xyxy[:, 3] - results.boxes.xyxy[:, 1])
                 max_idx = int(areas.argmax())
-                class_id = int(results.boxes.cls[max_idx].item())
+                class_id = model.names[int(results.boxes.cls[max_idx].item())]
+
 
                 # Overlay bounding box and class ID on frame
                 x1, y1, x2, y2 = map(int, results.boxes.xyxy[max_idx])
@@ -92,15 +95,13 @@ def main():
                 cv2.putText(frame, label, (x1, y1 - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-
-                # Save the annotated frame
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                save_path = os.path.join(SAVE_DIR, f"detection_{obstacle_id}_{timestamp}.jpg")
-                cv2.imwrite(save_path, frame)
-                print(f"Saved detected frame: {save_path}")
-
             else:
                 class_id = 0  # No detection
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            save_path = os.path.join(SAVE_DIR, f"detection_{obstacle_id}_{class_id}_{timestamp}.jpg")
+            print(f"Saved detected frame: {save_path}")
+            cv2.imwrite(save_path, frame)
 
             # Prepare response
             response = {
@@ -111,10 +112,9 @@ def main():
 
             # Convert to JSON bytes with length header
             response_json = json.dumps(response).encode("utf-8")
-            length_header = str(len(response_json)).ljust(16).encode("utf-8")
 
             # Send back to RPi
-            sock.sendall(length_header + response_json)
+            sock.sendall(response_json)
 
             # Optional: display detection
             annotated_frame = results.plot()
@@ -132,3 +132,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    stitch_images_grid(r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Detected")
