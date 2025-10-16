@@ -5,13 +5,13 @@ import numpy as np
 import json
 import os
 from datetime import datetime
-from ultralytics import YOLO
+from ultralytics import YOLO 
 
-HOST = "192.168.11.1"
+HOST = "192.168.11.15"
 PORT = 5005
 
-model = YOLO(r"C:\path\to\TrainedYOLOnModelColoured.pt")
-SAVE_DIR = r"C:\path\to\Detected"
+model = YOLO(r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\best.pt")
+SAVE_DIR = r"C:\Users\randa\OneDrive\Documents\GitHub\SC2079-MDP-Group-11\Image Recognition\Detected_Task2"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 def receive_full_message(sock):
@@ -64,18 +64,23 @@ def handle_client(conn, addr):
 
             for box in results[0].boxes:
                 cls_idx = int(box.cls[0])
-                if cls_idx == 28:
+                print(cls_idx)  
+                if cls_idx == 27:
                     detected_class = "right_arrow"
+                    print("Should be right")
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(img, "Right Arrow", (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                elif cls_idx == 29:
+                    break
+                elif cls_idx == 28:
                     detected_class = "left_arrow"
+                    print("Should be left")
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(img, "Left Arrow", (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    break
 
             # Save image for inspection
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
